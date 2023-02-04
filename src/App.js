@@ -4,8 +4,10 @@ import "./App.css";
 
 function App() {
   const [movies, setMovies] = useState([]);
+  const [isLoading, setLoading] = useState(false);
 
   const fetchMoviesHandler = async () => {
+    setLoading(true)
     const response = await fetch("https://swapi.py4e.com/api/films/");
     const data = await response.json();
 
@@ -17,7 +19,8 @@ function App() {
         openingText: movie.opening_crawl,
       };
     });
-    setMovies(transFormedData);
+     setMovies(transFormedData);
+     setLoading(false);
   };
 
   return (
@@ -27,6 +30,7 @@ function App() {
       </section>
       <section>
         <MoviesList movies={movies} />
+        {isLoading && <p>Loading...</p>}
       </section>
     </React.Fragment>
   );
