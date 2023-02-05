@@ -7,35 +7,34 @@ function App() {
   const [movies, setMovies] = useState([]);
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [requestType, setRequestType] = useState(0)
 
-  let title = null;
-  let openingText = null;
-  let releaseDate = null;
-
-  const titleHandler = (e) => {
-    title = e.target.value
-  };
-
-  const openingTextHandler = (e) => {
-    openingText = e.target.value
-  }
-
-  const releaseDateHandler = (e) => {
-    releaseDate = e.target.value
-  }
-
-  const addMovieHandler = (e) => {
-    e.preventDefault();
-    const inputDetails = {
-      Title: title,
-      Opening_Text: openingText,
-      Release_Date: releaseDate
+  const addMovieHandler = async (movie) => {
+    const response = await fetch(
+      "https://learning-http-request-d46f1-default-rtdb.firebaseio.com/movies.json",
+      {
+        method: "POST",
+        body: JSON.stringify(movie),
+        headers: {
+          "content-type": "movie-app",
+        },
+      }
+    );
+    if(response.ok){
+      setRequestType(requestType + 1);
     }
-
-    console.log(inputDetails);
-    
   };
 
+  const deleteMovieHandler = async (id) => {
+    const response = await fetch(
+      `https://learning-http-request-d46f1-default-rtdb.firebaseio.com/movies/${id}.json`,
+      { method: "DELETE" }
+    );
+
+    if(response.ok){
+      setRequestType(requestType + 1);
+    }
+  };
   // useEffect(() => {
 
   //   fetchMoviesHandler();
@@ -47,22 +46,26 @@ function App() {
     setError(null);
 
     try {
-      const response = await fetch("https://swapi.py4e.com/api/film/");
+      const response = await fetch(
+        "https://learning-http-request-d46f1-default-rtdb.firebaseio.com/movies.json"
+      );
       if (!response.ok) {
         throw new Error("Something went wrong ....Retrying");
       }
       const data = await response.json();
 
-      const transFormedData = data.results.map((movie) => {
-        return {
-          id: movie.episode_id,
-          title: movie.title,
-          releaseDate: movie.release_date,
-          openingText: movie.opening_crawl,
-        };
-      });
+      const loadedMovies = [];
 
-      setMovies(transFormedData);
+      for (const key in data) {
+        loadedMovies.push({
+          id: key,
+          Title: data[key].Title,
+          Opening_text: data[key].Opening_text,
+          Release_date: data[key].Release_Date,
+        });
+      }
+
+      setMovies(loadedMovies);
     } catch (error) {
       setError(error.message);
     }
@@ -71,32 +74,29 @@ function App() {
   }, []);
 
   useEffect(() => {
-    let id = null
-    console.log(error)
-    if(error){
+    let id = null;
+    if (error) {
       id = setInterval(() => {
-        console.log("inside setInterval")
         fetchMoviesHandler();
-      },5000)
+      }, 5000);
     }
     return () => {
-      console.log("cleanup function")
       clearInterval(id);
-    }
-  },[error])
-   
+    };
+  }, [error]);
+
   const cancelRetrying = () => {
-    setError(null)
-  }
+    setError(null);
+  };
 
   useEffect(() => {
     fetchMoviesHandler();
-  }, [fetchMoviesHandler]);
+  }, [fetchMoviesHandler, requestType]);
 
   let content = <p>no data found</p>;
 
   if (movies.length > 0) {
-    content = <MoviesList movies={movies} />;
+    content = <MoviesList movies={movies} onDeleteMovie={deleteMovieHandler} />;
   }
 
   if (error) {
@@ -110,12 +110,7 @@ function App() {
   return (
     <React.Fragment>
       <section>
-        <Input
-          onTitle={titleHandler}
-          onOpeningText={openingTextHandler}
-          onReleaseDate={releaseDateHandler}
-          onAddMovie={addMovieHandler}
-        />
+        <Input onAddMovie={addMovieHandler} />
         <button onClick={fetchMoviesHandler}>Fetch Movies</button>
         {error && <button onClick={cancelRetrying}>cancel retrying</button>}
       </section>
