@@ -47,7 +47,7 @@ function App() {
     setError(null);
 
     try {
-      const response = await fetch("https://swapi.py4e.com/api/films/");
+      const response = await fetch("https://swapi.py4e.com/api/film/");
       if (!response.ok) {
         throw new Error("Something went wrong ....Retrying");
       }
@@ -69,6 +69,25 @@ function App() {
 
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    let id = null
+    console.log(error)
+    if(error){
+      id = setInterval(() => {
+        console.log("inside setInterval")
+        fetchMoviesHandler();
+      },5000)
+    }
+    return () => {
+      console.log("cleanup function")
+      clearInterval(id);
+    }
+  },[error])
+   
+  const cancelRetrying = () => {
+    setError(null)
+  }
 
   useEffect(() => {
     fetchMoviesHandler();
@@ -98,6 +117,7 @@ function App() {
           onAddMovie={addMovieHandler}
         />
         <button onClick={fetchMoviesHandler}>Fetch Movies</button>
+        {error && <button onClick={cancelRetrying}>cancel retrying</button>}
       </section>
       <section>{content}</section>
     </React.Fragment>
